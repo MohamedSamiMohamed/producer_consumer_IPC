@@ -1,25 +1,35 @@
+
 #include "header.h"
+
 int *shmAddr;
 int shmId;
 int sharedMemSem;
 int emptySem;
 int fullSem;
-// void handler(int segNum){
-// shmdt(shmAddr);
-// shmctl(shmId, IPC_RMID, (struct shmid_ds *)0);
 
-// semctl(sem,0,IPC_RMID,(union Semun*)0);
-// exit(0);
-// signal (SIGINT, handler);
-// }
+
+struct shmid_ds shmData;
+void handler(int segNum){
+shmdt(shmAddr);
+shmctl(shmId, IPC_STAT,&shmData);
+if(shmData.shm_nattch==0){
+semctl(sharedMemSem,0,IPC_RMID,(union Semun*)0);
+semctl(fullSem,0,IPC_RMID,(union Semun*)0);
+semctl(emptySem,0,IPC_RMID,(union Semun*)0);
+shmctl(shmId, IPC_RMID,(struct shmid_ds*)0);
+}
+exit(0);
+signal (SIGINT, handler);
+}
 int main()
 {
+    signal (SIGINT, handler);
     union Semun sharedMemSemData;
     union Semun emptySemData;
     union Semun fullSemData;
     int add=0;
     shmAddr = initSharedMem('a', IPC_CREAT | IPC_EXCL| 0666, &shmId);
-    int sharedMemSem = semget('b', 1, 0666 | IPC_CREAT | IPC_EXCL);
+    sharedMemSem = semget('b', 1, 0666 | IPC_CREAT | IPC_EXCL);
     if (sharedMemSem == -1)
     {
         sharedMemSem = semget('b', 1, 0666 | IPC_CREAT);
@@ -78,13 +88,13 @@ int main()
     {   
         down(emptySem);
         down(sharedMemSem);
+
         shmAddr[add]=add;
         printf ("producer: inserted at position %d\n",add);
         add = (add+1) % N;
         up(sharedMemSem);
         up(fullSem);
-        sleep(1);               //simulate that the producer faster than the consumer
-
+        sleep(2);
     }
     return 0;
 }

@@ -36,6 +36,7 @@ int* initSharedMem(int key,int perm,int *shmId){
         for (int i=0;i<N;i++){
             shmAddr[i]=-1;
         }
+        return shmAddr;
     }
     
 }
@@ -78,6 +79,7 @@ void up(int sem)
         exit(-1);
     }
 }
+
 
 
 
