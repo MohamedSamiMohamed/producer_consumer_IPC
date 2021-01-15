@@ -23,23 +23,27 @@ int * attachShm(int shmId){
     return shmat(shmId, (void *)0, 0);
 }
 
-int* initSharedMem(int key,int perm,int *shmId){
+int* initSharedMem(int key,int perm,int *shmId,int size){
     key_t shmKey=ftok("key",key);
-    *shmId=shmget(shmKey,N*sizeof(int),perm);
+    if(perm==IPC_CREAT|IPC_EXCL|0666){
+    *shmId=shmget(shmKey,size*sizeof(int),perm);
     if(*shmId==-1){
-        *shmId=shmget(shmKey,N*sizeof(int),0666|IPC_CREAT);
-        return attachShm(*shmId);
+    *shmId=shmget(shmKey,size*sizeof(int),IPC_CREAT|0666);
+    return attachShm(*shmId);
     }
     else{
-        int *shmAddr;
-        shmAddr=attachShm(*shmId);
-        for (int i=0;i<N;i++){
-            shmAddr[i]=-1;
-        }
-        return shmAddr;
+    int *addr=attachShm(*shmId);
+    *addr=0;
+    return addr;  
+    }  
     }
+    else{
     
+    *shmId=shmget(shmKey,size*sizeof(int),perm);
+    return attachShm(*shmId);
+    }
 }
+    
 
 union Semun
 {
